@@ -1,0 +1,161 @@
+%% Assignment 2: Delhi Metro
+%% Full Name: Pankaj kumar
+%% Roll No: 111601014
+
+
+
+line(red,
+	[ rithala,
+          rohini-east,
+          rohini-west,
+          pitam-pura,
+          kohat-enclave,
+          netaji-subash-place,
+          keshav-puram,
+          kanhaiya-nagar,
+          indralok,
+          shastri-nagar,
+          pratap-nagar,
+          pul-bangesh,
+          tiz-hazari,
+          kashmiri-gate,
+          shastri-park,
+          seelam-pur,
+          welcome,
+          shahdara,
+          mansarovar-park,
+          jhilmil,
+          dilshad-garden
+        ]
+    ).
+line(yellow,[ vishwa-vidayala
+            , vidhan-sabha
+            , civil-lines
+            , kashmiri-gate
+            , chandini-chowk
+            , chawari-bazar
+            , new-delhi
+            , rajiv-chowk
+            , patel-chowk
+            , central-secretariat
+            ]
+    ).
+
+line(blue,[ indraprastha
+          , pragati-maidan
+          , mandi-house
+          , barakhamba-road
+          , rajiv-chowk
+          , ramakrishna-ashram-marg
+          , jhandewala
+          , karol-bagh
+          , rajendra-place
+          , patel-nagar
+          , shadipur
+          , kirti-nagar
+          , moti-nagar
+          , ramesh-nagar
+          , rajouri-garden
+          , tagore-garden
+          , subhash-nagar
+          , tilak-nagar
+          , janakpuri-east
+          , janakpuri-west
+          , uttam-nagar-east
+          , uttam-nagar-west
+          , nawada
+          , dwarka-mor
+          , dwarka
+          , sector-14-dwarka
+          , sector-13-dwarka
+          , sector-12-dwarka
+          , sector-11-dwarka
+          , sector-10-dwarka
+          , sector-9-dwarka
+          ]).
+
+
+%% rule to check list membership : memberchk(red , [red , yellow , black]).
+
+lineContains(X , L) :- line(L,Z) , memberchk(X , Z).
+
+getLine(X , L) :- line(Y , _) , lineContains(X,Y) , L = Y.
+
+isSameLine(X,Y) :- getLine(X , L1) , getLine(Y , L2) , L1=L2, !.
+
+isJunction(X) :-  getLine(X, _), findall(_ , lineContains(X,L),L) , length(L,Y),  Y\==1,!.
+
+isJunctionMap(X,Z) :-  getLine(X, _), findall(_ , lineContains(X,L),L) , length(L,Y), Y =:= 1 -> Z=0 ; Z=1 ,!.
+
+filterJunctions([] , Junction) :- Junction = [].
+filterJunctions([H|T], Junction) :- isJunction(H) -> filterJunctions(T , J), Junction = [H|J] ; filterJunctions(T , J), Junction = J.
+findJunctions(Line , JunctionList) :- line(Line , L) , filterJunctions(L , J), JunctionList=J, !.
+
+getPath(X , Y, Path) :- X=Y , Path=[] , !.
+getPath(X , Y, Path) :- isSameLine(X,Y) , getLine(X , Lx) , getLine(Y , Ly), Lx=Ly, Path=[[X,Lx,Y]] ,!.
+
+
+getPath(X,Y,Path) :- getLine(X,Lx), getLine(Y,Ly) , findJunctions(Lx , Jx) , length(Jx,Length), Length =:= 1 ->  (
+                                                                                [A|_] = Jx,
+                                                                                isSameLine(A,Y)->(
+                                                                                    
+                                                                                    Path=[[X,Lx,A] , [A , Ly, Y]]
+                                                                                ) ; (
+                                                                                    [A|_] = Jx,
+                                                                                    
+                                                                                    findall(Z , getLine(A , Z) , LTemp),
+                                                                                    
+                                                                                    [L1,L2|_] = LTemp,
+                                                                                    Lx==L1 -> (
+                                                                                        
+                                                                                        findJunctions(L2 , NewJunc),
+                                                                                        [ANew , BNew | _] = NewJunc,
+                                                                                        ANew=A -> (
+                                                                                            getPath(BNew , Y , P),
+                                                                                            Path=[[X,Lx,A] , [A , L2 , BNew] | P]
+                                                                                        ) ; (
+                                                                                            getPath(ANew , Y , P),
+                                                                                            Path=[[X,Lx,A] , [A , L2 , ANew] | P]
+                                                                                        )
+                                                                                        
+                                                                                    ) ; (
+                                                                                        [A|_] = Jx,
+                                                                                        findall(Z , getLine(A , Z) , LTemp),
+                                                                                        [L1,L2|_] = LTemp,
+                                                                                        findJunctions(L1 , NewJunc),
+                                                                                        [ANew , BNew | _] = NewJunc,
+                                                                                        ANew=A -> (
+                                                                                            getPath(BNew , Y , P),
+                                                                                            Path=[[X,Lx,A] , [A , L1 , BNew] | P]
+                                                                                        ) ; (
+
+                                                                                            [A|_] = Jx,
+                                                                                            findall(Z , getLine(A , Z) , LTemp),
+                                                                                            [L1,L2|_] = LTemp,
+                                                                                            findJunctions(L1 , NewJunc),
+                                                                                            [ANew , BNew | _] = NewJunc,
+                                                                                            
+                                                                                            getPath(ANew , Y , P),
+                                                                                            Path=[[X,Lx,A] , [A , L1 , ANew] | P]
+                                                                                        )
+                                                                                    )
+                                                                                )
+                                                                            ) ; (
+                                                                                
+                                                                                getLine(X,Lx),
+                                                                                getLine(Y,Ly),
+                                                                                findJunctions(Lx , Jx),
+                                                                                [A , B | _] = Jx,
+
+                                                                                isSameLine(A,Y) -> (
+                                                                                    Path=[[X,Lx,A] , [A,Ly,Y]]
+                                                                                ) ; (
+                                                                                   
+                                                                                    getLine(X,Lx_new),
+                                                                                    findJunctions(Lx_new , Jx_new),                                                                                   
+                                                                                    getLine(Y,Ly_new),
+
+                                                                                    [ANew2 , BNew2 | _] = Jx,
+                                                                                    Path=[[X,Lx_new,BNew2] , [BNew2,Ly_new,Y]]
+                                                                                )
+                                                                            ) , !.
